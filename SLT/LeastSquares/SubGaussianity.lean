@@ -135,7 +135,9 @@ lemma empiricalProcess_increment_mgf (n : ℕ) [NeZero n] (x : Fin n → X)
   have h_mgf : ∀ i : Fin n, ∫ x : ℝ, Real.exp (t * a i * x) ∂(gaussianReal 0 1) =
       Real.exp ((t * a i)^2 / 2) := fun i => by
     have h_map : Measure.map id (gaussianReal 0 1) = gaussianReal 0 1 := Measure.map_id
-    have hmgf := mgf_gaussianReal h_map (t * a i)
+    have h_law : HasLaw id (gaussianReal 0 1) (gaussianReal 0 1) :=
+      ⟨measurable_id.aemeasurable, h_map⟩
+    have hmgf := mgf_gaussianReal h_law (t * a i)
     simp only [mgf, id_eq, zero_mul, NNReal.coe_one, zero_add, one_mul] at hmgf
     convert hmgf using 2
   simp_rw [h_mgf]

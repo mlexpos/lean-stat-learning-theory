@@ -62,7 +62,7 @@ lemma condExpExceptCoord_stronglyMeasurable (hf : StronglyMeasurable f) :
     StronglyMeasurable (condExpExceptCoord (μs := μs) i f) := by
   unfold condExpExceptCoord
   apply StronglyMeasurable.integral_prod_right
-  exact hf.comp_measurable (measurable_pi_lambda _ (fun j => by
+  exact hf.comp_measurable (Measurable.of_eval (fun j => by
     by_cases h : j = i
     · subst h
       simp only [Function.update_self]

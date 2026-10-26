@@ -282,6 +282,7 @@ theorem orthonormal_leftSingularVector_of_singularValues_ne_zero
   intro i j
   by_cases hij : i = j
   · subst j
+    rw [if_pos rfl]
     simp [A.norm_leftSingularVector_of_singularValues_ne_zero i.property,
       inner_self_eq_norm_sq_to_K]
   · have hne : (i : Fin (Fintype.card n)) ≠ (j : Fin (Fintype.card n)) := by

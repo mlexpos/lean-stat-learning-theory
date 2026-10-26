@@ -20,7 +20,7 @@ theorem exists_seq_tendsto_ae_of_tendsto_eLpNorm_one
     ∃ ns : ℕ → ℕ, StrictMono ns ∧
       ∀ᵐ x ∂mu, Tendsto (fun i => f (ns i) x) atTop (nhds (g x)) := by
   have h_in_measure : TendstoInMeasure mu f atTop g :=
-    tendstoInMeasure_of_tendsto_eLpNorm (p := (1 : ENNReal)) (by simp) hf hg hfg
+    tendstoInMeasure_of_tendsto_eLpNorm (p := (1 : ENNReal)) (by simp) hfg
   exact h_in_measure.exists_seq_tendsto_ae
 
 end MeasureTheory

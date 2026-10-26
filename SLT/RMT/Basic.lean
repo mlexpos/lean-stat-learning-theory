@@ -1063,8 +1063,9 @@ lemma matrixOperatorNorm_le_two_mul_signed_sup_of_quarter_centered_bilinear_net 
     have hp : ((x, y) : MatrixBilinearPair m n) ∈ s := by
       change (x, y) ∈ N.domainNet ×ˢ N.codomainNet
       exact Finset.mem_product.mpr ⟨hx, hy⟩
-    simpa [absMax, s] using
-      (Finset.le_sup' (s := s) (f := fun p => |inner ℝ (A.toEuclideanLin p.1) p.2|) hp)
+    change |inner ℝ (A.toEuclideanLin x) y| ≤
+      s.sup' hN (fun p => |inner ℝ (A.toEuclideanLin p.1) p.2|)
+    exact Finset.le_sup' (s := s) (f := fun p => |inner ℝ (A.toEuclideanLin p.1) p.2|) hp
   have habs_le_signed : absMax ≤ signed.sup' hsigned signedValue := by
     refine Finset.sup'_le (s := s) (H := hN)
       (f := fun p => |inner ℝ (A.toEuclideanLin p.1) p.2|)
@@ -4433,17 +4434,23 @@ theorem norm_subgaussian_matrices_expectation_hdp_of_pos {m n : ℕ} (hm : 0 < m
         (A := A) (μ := μ) (K := 2 * K) hA.independent hentry hx_norm hy_norm
     by_cases hsign : q.2
     · simpa [Z, signedBilinearValue, hsign] using hbase
-    · convert hbase.neg using 1
-      funext ω
-      simp [Z, signedBilinearValue, hsign]
+    · have hZeq : Z q = -(fun ω =>
+          inner ℝ ((randomMatrix A ω).toEuclideanLin q.1.1) q.1.2) := by
+        funext ω
+        simp [Z, signedBilinearValue, hsign]
+      rw [hZeq]
+      exact hbase.neg
   have hZ_meas : ∀ q ∈ signed, Measurable (Z q) := by
     intro q hq
     have hbase := inner_randomMatrix_measurable hA.measurable q.1.1 q.1.2
     by_cases hsign : q.2
     · simpa [Z, signedBilinearValue, hsign] using hbase
-    · convert hbase.neg using 1
-      funext ω
-      simp [Z, signedBilinearValue, hsign]
+    · have hZeq : Z q = -(fun ω =>
+          inner ℝ ((randomMatrix A ω).toEuclideanLin q.1.1) q.1.2) := by
+        funext ω
+        simp [Z, signedBilinearValue, hsign]
+      rw [hZeq]
+      exact hbase.neg
   have hZ_int : ∀ q ∈ signed, Integrable (Z q) μ := fun q hq => (hZ_mgf q hq).integrable
   have hZ_exp : ∀ q ∈ signed, ∀ t, Integrable (fun ω => exp (t * Z q ω)) μ :=
     fun q hq t => (hZ_mgf q hq).integrable_exp_mul t

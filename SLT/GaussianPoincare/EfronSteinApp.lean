@@ -338,11 +338,22 @@ lemma rademacher_values_ae {Ω : Type*} [MeasurableSpace Ω]
       simp
     }
   rw [← hε] at hsupp
-  -- ε is measurable since map ε P = rademacherMeasure ≠ 0
+  -- A non-a.e.-measurable map is now defined to be a Dirac measure; the
+  -- Rademacher law is not Dirac.
   have hmeas' : AEMeasurable ε P := by
-    apply AEMeasurable.of_map_ne_zero
-    rw [hε]
-    exact IsProbabilityMeasure.ne_zero rademacherMeasure
+    by_contra hnot
+    have hP : P ≠ 0 := by
+      intro hP0
+      subst P
+      rw [Measure.map_zero] at hε
+      exact (IsProbabilityMeasure.ne_zero rademacherMeasure) hε.symm
+    have hdir := Measure.map_of_not_aemeasurable_of_ne_zero hnot hP
+    rw [hε] at hdir
+    have hone := congrArg (fun m : Measure ℝ => m ({1} : Set ℝ)) hdir
+    by_cases hc : (Classical.ofNonempty : ℝ) = 1
+    · simp [rademacherMeasure, Pi.single_apply, hc] at hone
+      norm_num at hone
+    · simp [rademacherMeasure, Pi.single_apply, hc] at hone
   exact ae_of_ae_map hmeas' hsupp
 
 variable (n : ℕ)

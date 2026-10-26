@@ -152,11 +152,13 @@ theorem empiricalToEuclidean_image_eq (hn : 0 < n)
     constructor
     · -- empiricalToEuclidean (fun i => ⟨θ, x i⟩) = designMatrixMul x θ
       ext i
-      simp only [empiricalToEuclidean_apply, designMatrixMul_apply]
+      change inner ℝ θ (x i) = inner ℝ θ (x i)
+      rfl
     · -- ‖designMatrixMul x θ‖ ≤ δ * √n
       have heq : empiricalToEuclidean n (fun i => @inner ℝ _ _ θ (x i)) = designMatrixMul x θ := by
         ext i
-        simp only [empiricalToEuclidean_apply, designMatrixMul_apply]
+        change inner ℝ θ (x i) = inner ℝ θ (x i)
+        rfl
       rw [heq]
       exact hθ_norm
   · -- Backward: v ∈ euclideanLocalizedBall → v ∈ image
@@ -166,7 +168,8 @@ theorem empiricalToEuclidean_image_eq (hn : 0 < n)
     · rw [linearLocalizedBallImage_eq hn x δ]
       exact ⟨θ, hball, rfl⟩
     · ext i
-      simp only [empiricalToEuclidean_apply, designMatrixMul_apply]
+      change inner ℝ θ (x i) = inner ℝ θ (x i)
+      rfl
 
 /-- empiricalToEuclidean is a bijection from EmpiricalSpace to EuclideanSpace -/
 lemma empiricalToEuclidean_bijective : Function.Bijective (empiricalToEuclidean n) := by

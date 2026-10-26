@@ -934,9 +934,9 @@ theorem matrixBernstein_lieb_recursion_of_independent {n N : ℕ}
   haveI : ∀ i, IsProbabilityMeasure (μs i) := by
     intro i
     dsimp [μs]
-    exact Measure.isProbabilityMeasure_map (hX_ae i)
+    infer_instance
   have hφ : AEMeasurable φ μ :=
-    aemeasurable_pi_lambda _ hX_ae
+    AEMeasurable.of_eval hX_ae
   have hmap_eq : μ.map φ = Measure.pi μs := by
     unfold MatrixBernsteinIndependent at h_independent
     simpa [φ, μs, Mat] using

@@ -82,20 +82,22 @@ lemma memW12Gaussian_iff_sobolevNormSq_lt_top {f : E n → ℝ}
       GaussianSobolevNormSq n f γ < ⊤ ∧
       AEStronglyMeasurable f γ ∧
       AEStronglyMeasurable (fun x ↦ fderiv ℝ f x) γ := by
-  simp only [MemW12Gaussian, GaussianSobolevNormSq, MemLp]
-  -- Use: eLpNorm (‖g ·‖) p μ = eLpNorm g p μ
-  have heq : eLpNorm (fun x ↦ ‖fderiv ℝ f x‖) 2 γ = eLpNorm (fun x ↦ fderiv ℝ f x) 2 γ :=
-    MeasureTheory.eLpNorm_norm (fun x ↦ fderiv ℝ f x)
-  rw [heq]
   constructor
-  · rintro ⟨⟨hf_meas, hf_norm⟩, hdf_meas, hdf_norm⟩
+  · rintro ⟨hf, hdf⟩
+    have hf_meas := hf.aestronglyMeasurable
+    have hdf_meas := hdf.aestronglyMeasurable
     refine ⟨?_, hf_meas, hdf_meas⟩
-    exact ENNReal.add_lt_top.mpr ⟨ENNReal.pow_lt_top hf_norm, ENNReal.pow_lt_top hdf_norm⟩
+    rw [GaussianSobolevNormSq,
+      MeasureTheory.eLpNorm_norm (fun x ↦ fderiv ℝ f x) hdf_meas]
+    exact ENNReal.add_lt_top.mpr
+      ⟨ENNReal.pow_lt_top hf.eLpNorm_lt_top, ENNReal.pow_lt_top hdf.eLpNorm_lt_top⟩
   · rintro ⟨hsum, hf_meas, hdf_meas⟩
+    rw [GaussianSobolevNormSq,
+      MeasureTheory.eLpNorm_norm (fun x ↦ fderiv ℝ f x) hdf_meas] at hsum
     have ⟨h1, h2⟩ := ENNReal.add_lt_top.mp hsum
-    refine ⟨⟨hf_meas, ?_⟩, hdf_meas, ?_⟩
-    · exact (ENNReal.pow_lt_top_iff.mp h1).resolve_right (by decide)
-    · exact (ENNReal.pow_lt_top_iff.mp h2).resolve_right (by decide)
+    refine ⟨?_, ?_⟩
+    · exact (ENNReal.pow_lt_top_iff.mp h1).resolve_right (by norm_num)
+    · exact (ENNReal.pow_lt_top_iff.mp h2).resolve_right (by norm_num)
 
 /-! ### Smooth Cutoff Functions -/
 

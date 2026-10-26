@@ -133,11 +133,11 @@ theorem bernoulli_flip_invariance (j : Fin n) :
     by_cases h : i = j
     · subst h; simp only [update_self, Bool.not_not]
     · rw [update_of_ne h, update_of_ne h]
-  rw [Measure.map_smul]
+  have hmeas : Measurable (flipCoord j) := measurable_of_finite _
+  rw [Measure.map_smul _ hmeas.aemeasurable]
   congr 1
   -- Show count measure is invariant under bijection
   ext s hs
-  have hmeas : Measurable (flipCoord j) := measurable_of_finite _
   rw [Measure.map_apply hmeas hs]
   have hs1 : (flipCoord j ⁻¹' s).Finite := Set.toFinite _
   have hs2 : s.Finite := Set.toFinite _

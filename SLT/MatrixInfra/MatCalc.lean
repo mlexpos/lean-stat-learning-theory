@@ -77,7 +77,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 theorem rayleighQuotient_mono_of_le {A B : E →ₗ[ℝ] E} (hAB : A ≤ B) {x : E}
     (hx : x ≠ 0) :
     rayleighQuotient A x ≤ rayleighQuotient B x := by
-  have hpos : (B - A).IsPositive := (LinearMap.le_def A B).mp hAB
+  have hpos : (B - A).IsPositive := LinearMap.le_def.mp hAB
   have hinner : 0 ≤ inner ℝ ((B - A) x) x := hpos.inner_nonneg_left x
   have hden : 0 < ‖x‖ ^ 2 := sq_pos_of_pos (norm_pos_iff.mpr hx)
   unfold rayleighQuotient
@@ -115,7 +115,7 @@ functional-calculus theorem for logarithm.
 noncomputable def realMatrixToCStarMatrixStarAlgHom :
     Matrix n n ℝ →⋆ₐ[ℝ] CStarMatrix n n ℂ :=
   (((CStarMatrix.ofMatrixStarAlgEquiv (n := n) (A := ℂ) :
-      Matrix n n ℂ →⋆ₐ[ℂ] CStarMatrix n n ℂ).restrictScalars ℝ).comp
+      Matrix n n ℂ ≃⋆ₐ[ℂ] CStarMatrix n n ℂ).restrictScalars ℝ).toStarAlgHom.comp
     (realMatrixToComplexMatrixStarAlgHom (n := n)))
 
 /-- Positive semidefiniteness reflects from the complexification back to the real matrix. -/
@@ -793,7 +793,9 @@ theorem leftRightDenominatorMatrix_twoSidedUnitary_diagonal_solve_mulVec_vec
   ext i j
   have hden : d i + t * e j ≠ 0 := by
     exact ne_of_gt (add_pos_of_pos_of_nonneg (hd i) (mul_nonneg ht (le_of_lt (he j))))
-  simp [W, Matrix.diagonal_mul, Matrix.mul_diagonal, div_eq_mul_inv]
+  change (diagonal d * W) i j + t * (W * diagonal e) i j = Y i j
+  rw [Matrix.diagonal_mul, Matrix.mul_diagonal]
+  simp only [W, div_eq_mul_inv]
   calc
     d i * (Y i j * (d i + t * e j)⁻¹) +
         t * (Y i j * (d i + t * e j)⁻¹ * e j) =

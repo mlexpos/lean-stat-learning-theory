@@ -203,7 +203,7 @@ lemma cutoff_L2_convergence (f : E n → ℝ) (hf : MemLp f 2 (stdGaussianE n)) 
   have hf_sq_int : ∫⁻ x, (‖f x‖₊ : ℝ≥0∞) ^ (2 : ℝ) ∂(stdGaussianE n) < ⊤ := by
     have hlt := hf.eLpNorm_lt_top
     rw [MeasureTheory.eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num : (2 : ℝ≥0∞) ≠ 0)
-        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤)] at hlt
+        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤) hf.aestronglyMeasurable] at hlt
     simp only [ENNReal.toReal_ofNat, one_div, enorm_eq_nnnorm] at hlt
     by_contra habs
     push Not at habs
@@ -314,8 +314,14 @@ lemma cutoff_L2_convergence (f : E n → ℝ) (hf : MemLp f 2 (stdGaussianE n)) 
   have heLpNorm_eq : ∀ R, eLpNorm (fun x => f x * (1 - smoothCutoffR R x)) 2 (stdGaussianE n) =
       (∫⁻ x, F R x ∂(stdGaussianE n)) ^ (2⁻¹ : ℝ) := by
     intro R
+    have hχ_cont : Continuous (smoothCutoffR (n := n) R) :=
+      smoothCutoff_contDiff.continuous.comp (continuous_norm.div_const R)
+    have hmeas : AEStronglyMeasurable (fun x => f x * (1 - smoothCutoffR R x))
+        (stdGaussianE n) :=
+      hf.aestronglyMeasurable.mul
+        ((measurable_const.sub hχ_cont.measurable).aestronglyMeasurable)
     rw [MeasureTheory.eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num : (2 : ℝ≥0∞) ≠ 0)
-        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤)]
+        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤) hmeas]
     simp only [ENNReal.toReal_ofNat, one_div, enorm_eq_nnnorm, F]
   simp only [heLpNorm_eq]
   -- rpow (1/2) is continuous, so if lintegral → 0 then lintegral^(1/2) → 0
@@ -407,7 +413,7 @@ lemma cutoff_gradient_error_bound (f : E n → ℝ)
   have hg_sq_int : ∫⁻ x, (‖g x‖₊ : ℝ≥0∞) ^ (2 : ℝ) ∂(stdGaussianE n) < ⊤ := by
     have hlt := hf_grad.eLpNorm_lt_top
     rw [MeasureTheory.eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num : (2 : ℝ≥0∞) ≠ 0)
-        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤)] at hlt
+        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤) hf_grad.aestronglyMeasurable] at hlt
     simp only [ENNReal.toReal_ofNat, one_div, enorm_eq_nnnorm, g] at hlt ⊢
     by_contra habs
     push Not at habs
@@ -466,8 +472,13 @@ lemma cutoff_gradient_error_bound (f : E n → ℝ)
   have heLpNorm_eq : ∀ R, eLpNorm (fun x => (1 - smoothCutoffR R x) • fderiv ℝ f x) 2 (stdGaussianE n) =
       (∫⁻ x, F R x ∂(stdGaussianE n)) ^ (2⁻¹ : ℝ) := by
     intro R
+    have hχ_cont : Continuous (smoothCutoffR (n := n) R) :=
+      smoothCutoff_contDiff.continuous.comp (continuous_norm.div_const R)
+    have hmeas : AEStronglyMeasurable
+        (fun x => (1 - smoothCutoffR R x) • fderiv ℝ f x) (stdGaussianE n) :=
+      (continuous_const.sub hχ_cont).aestronglyMeasurable.smul hf_grad.aestronglyMeasurable
     rw [MeasureTheory.eLpNorm_eq_lintegral_rpow_enorm_toReal (by norm_num : (2 : ℝ≥0∞) ≠ 0)
-        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤)]
+        (by norm_num : (2 : ℝ≥0∞) ≠ ⊤) hmeas]
     simp only [ENNReal.toReal_ofNat, one_div, enorm_eq_nnnorm, F, g]
   simp only [heLpNorm_eq]
   have h_rpow_tendsto : Filter.Tendsto (fun R => (∫⁻ x, F R x ∂(stdGaussianE n)) ^ (2⁻¹ : ℝ))
@@ -552,7 +563,8 @@ lemma cutoff_gradient_extra_term (f : E n → ℝ) (hf : MemLp f 2 (stdGaussianE
     use 1
     intro R hR
     have hf_ae : f =ᵐ[stdGaussianE n] (fun _ => (0 : ℝ)) :=
-        (eLpNorm_eq_zero_iff hf.aestronglyMeasurable (by norm_num : (2 : ℝ≥0∞) ≠ 0)).mp hf_zero
+        (eLpNorm_eq_zero_iff (p := 2) (μ := stdGaussianE n)
+          (by norm_num : (2 : ℝ≥0∞) ≠ 0)).mp hf_zero
     have hgoal_ae : (fun x => f x • fderiv ℝ (smoothCutoffR R) x) =ᵐ[stdGaussianE n]
         (fun _ : E n => (0 : E n →L[ℝ] ℝ)) := by
       filter_upwards [hf_ae] with x hx
@@ -610,6 +622,8 @@ lemma cutoff_gradient_extra_term (f : E n → ℝ) (hf : MemLp f 2 (stdGaussianE
         calc eLpNorm (fun x => f x • fderiv ℝ (smoothCutoffR R) x) 2 (stdGaussianE n)
             ≤ eLpNorm (fun x => (C / R) * ‖f x‖) 2 (stdGaussianE n) := by
               apply MeasureTheory.eLpNorm_mono_real
+                (hf.aestronglyMeasurable.smul
+                  (measurable_fderiv ℝ (smoothCutoffR (n := n) R)).aestronglyMeasurable)
               intro x
               exact hfact x
           _ = ENNReal.ofReal (C / R) * eLpNorm (fun x => ‖f x‖) 2 (stdGaussianE n) := by
@@ -622,7 +636,7 @@ lemma cutoff_gradient_extra_term (f : E n → ℝ) (hf : MemLp f 2 (stdGaussianE
               exact Real.enorm_eq_ofReal hCR_nneg
           _ = ENNReal.ofReal (C / R) * eLpNorm f 2 (stdGaussianE n) := by
               congr 1
-              exact eLpNorm_norm (f := f)
+              exact eLpNorm_norm f hf.aestronglyMeasurable
       calc eLpNorm (fun x => f x • fderiv ℝ (smoothCutoffR R) x) 2 (stdGaussianE n)
           ≤ ENNReal.ofReal (C / R) * eLpNorm f 2 (stdGaussianE n) := heLpNorm_le
         _ = ENNReal.ofReal (C / R) * ENNReal.ofReal (eLpNorm f 2 (stdGaussianE n)).toReal := by
@@ -813,13 +827,11 @@ lemma eLpNorm_norm_add_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
     {E : Type*} [NormedAddCommGroup E] {f g : α → E}
     (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
     eLpNorm (fun x => ‖f x‖ + ‖g x‖) 2 μ ≤ eLpNorm f 2 μ + eLpNorm g 2 μ := by
-  -- Pre-compute norm measurability to avoid repeated elaboration
-  have hfn : AEStronglyMeasurable (fun x => ‖f x‖) μ := hf.norm
-  have hgn : AEStronglyMeasurable (fun x => ‖g x‖) μ := hg.norm
   have h1 : (fun x => ‖f x‖ + ‖g x‖) = (fun x => ‖f x‖) + (fun x => ‖g x‖) := rfl
   rw [h1]
-  have hadd := eLpNorm_add_le hfn hgn (by norm_num : (1 : ℝ≥0∞) ≤ 2)
-  simp only [eLpNorm_norm] at hadd
+  have hadd := eLpNorm_add_le (f := fun x => ‖f x‖) (g := fun x => ‖g x‖)
+    (μ := μ) (p := 2) (by norm_num : (1 : ℝ≥0∞) ≤ 2)
+  rw [eLpNorm_norm f hf, eLpNorm_norm g hg] at hadd
   exact hadd
 
 set_option maxHeartbeats 8000000 in
@@ -886,7 +898,8 @@ theorem tendsto_cutoff_W12 (f : E n → ℝ) (hf : MemW12Gaussian n f (stdGaussi
       · -- Eventually LHS ≤ RHS (only need for R > 0)
         filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with R (hR_pos : 0 < R)
         -- Need: ||∇(f * χ_R - f)|| ≤ ||(1-χ_R)∇f|| + ||f∇χ_R||
-        rw [eLpNorm_norm (f := fun x => fderiv ℝ (f * smoothCutoffR R - f) x)]
+        rw [eLpNorm_norm (fun x => fderiv ℝ (f * smoothCutoffR R - f) x)
+          (measurable_fderiv ℝ (f * smoothCutoffR R - f)).aestronglyMeasurable]
         have hnorm_bound : ∀ x, ‖fderiv ℝ (f * smoothCutoffR R - f) x‖ ≤
             ‖f x • fderiv ℝ (smoothCutoffR R) x‖ + ‖(1 - smoothCutoffR R x) • fderiv ℝ f x‖ := by
           intro x
@@ -1026,7 +1039,10 @@ theorem tendsto_cutoff_W12 (f : E n → ℝ) (hf : MemW12Gaussian n f (stdGaussi
         -- Step 1: Use pointwise bound
         have hstep1 : eLpNorm (fun x => fderiv ℝ (f * smoothCutoffR R - f) x) 2 (stdGaussianE n)
             ≤ eLpNorm (fun x => ‖term2 x‖ + ‖term1 x‖) 2 (stdGaussianE n) := by
-          apply eLpNorm_mono_real; intro x; exact hnorm_bound x
+          apply eLpNorm_mono_real
+            (measurable_fderiv ℝ (f * smoothCutoffR R - f)).aestronglyMeasurable
+          intro x
+          exact hnorm_bound x
         -- Step 2: Triangle inequality for eLpNorm using helper
         have hmeas1 : AEStronglyMeasurable term2 (stdGaussianE n) :=
           hf_L2.aestronglyMeasurable.smul hcont_fderiv.aestronglyMeasurable
