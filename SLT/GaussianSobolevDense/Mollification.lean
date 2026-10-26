@@ -399,13 +399,14 @@ lemma mollify_tendsto_uniformly_on_compact {n : ℕ} {g : E n → ℝ} {K : Set 
     finite-measure set. Bounds the L² norm by sup-norm times measure^(1/2). -/
 lemma eLpNorm_tendsto_zero_of_tendstoUniformly_restrict {n : ℕ} {f : ℕ → E n → ℝ} {g : E n → ℝ}
     {s : Set (E n)} (hμ : volume s < ⊤)
+    (hf_meas : ∀ i, AEStronglyMeasurable (f i) volume) (hg_meas : AEStronglyMeasurable g volume)
     (hf_zero : ∀ i x, x ∉ s → f i x = 0) (hg_zero : ∀ x, x ∉ s → g x = 0)
     (h_unif : TendstoUniformly f g Filter.atTop) :
     Filter.Tendsto (fun i => eLpNorm (f i - g) 2 volume) Filter.atTop (nhds 0) := by
   have h_restrict : ∀ i, eLpNorm (f i - g) 2 volume = eLpNorm (f i - g) 2 (volume.restrict s) := by
     intro i
     symm
-    apply eLpNorm_restrict_eq_of_support_subset
+    apply eLpNorm_restrict_eq_of_support_subset ((hf_meas i).sub hg_meas)
     intro x hx
     rw [Function.mem_support, Pi.sub_apply, sub_ne_zero] at hx
     by_contra hxs
@@ -436,7 +437,7 @@ lemma eLpNorm_tendsto_zero_of_tendstoUniformly_restrict {n : ℕ} {f : ℕ → E
     have h_bound : eLpNorm (f i - g) 2 (volume.restrict s) ≤ ENNReal.ofReal δ * (volume s) ^ (1/2 : ℝ) := by
       calc eLpNorm (f i - g) 2 (volume.restrict s)
           ≤ eLpNorm (fun _ => δ) 2 (volume.restrict s) := by
-            apply eLpNorm_mono_ae
+            apply eLpNorm_mono_ae ((hf_meas i).sub hg_meas).restrict
             rw [Filter.eventually_iff_exists_mem]
             use Set.univ
             constructor
@@ -485,13 +486,14 @@ lemma eLpNorm_tendsto_zero_of_tendstoUniformly_restrict {n : ℕ} {f : ℕ → E
 lemma eLpNorm_tendsto_zero_of_tendstoUniformly_general {n : ℕ} {μ : Measure (E n)}
     {f : ℕ → E n → ℝ} {g : E n → ℝ}
     {s : Set (E n)} (hμ : μ s < ⊤)
+    (hf_meas : ∀ i, AEStronglyMeasurable (f i) μ) (hg_meas : AEStronglyMeasurable g μ)
     (hf_zero : ∀ i x, x ∉ s → f i x = 0) (hg_zero : ∀ x, x ∉ s → g x = 0)
     (h_unif : TendstoUniformly f g Filter.atTop) :
     Filter.Tendsto (fun i => eLpNorm (f i - g) 2 μ) Filter.atTop (nhds 0) := by
   have h_restrict : ∀ i, eLpNorm (f i - g) 2 μ = eLpNorm (f i - g) 2 (μ.restrict s) := by
     intro i
     symm
-    apply eLpNorm_restrict_eq_of_support_subset
+    apply eLpNorm_restrict_eq_of_support_subset ((hf_meas i).sub hg_meas)
     intro x hx
     rw [Function.mem_support, Pi.sub_apply, sub_ne_zero] at hx
     by_contra hxs
@@ -522,7 +524,7 @@ lemma eLpNorm_tendsto_zero_of_tendstoUniformly_general {n : ℕ} {μ : Measure (
     have h_bound : eLpNorm (f i - g) 2 (μ.restrict s) ≤ ENNReal.ofReal δ * (μ s) ^ (1/2 : ℝ) := by
       calc eLpNorm (f i - g) 2 (μ.restrict s)
           ≤ eLpNorm (fun _ => δ) 2 (μ.restrict s) := by
-            apply eLpNorm_mono_ae
+            apply eLpNorm_mono_ae ((hf_meas i).sub hg_meas).restrict
             rw [Filter.eventually_iff_exists_mem]
             use Set.univ
             constructor
@@ -575,6 +577,9 @@ lemma mollify_L2_convergence_continuous {n : ℕ} {g : E n → ℝ} {R : ℝ} (h
     (hg_cont : Continuous g) (hg_supp : tsupport g ⊆ Metric.closedBall 0 (2 * R)) :
     Filter.Tendsto (fun ε => eLpNorm (mollify ε g - g) 2 volume)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
+  have hg_compact : HasCompactSupport g :=
+    HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall 0 (2 * R))
+      (fun x hx => hg_supp (subset_closure hx))
   rw [ENNReal.tendsto_nhds_zero]
   intro δ hδ
   have hK : IsCompact (Metric.closedBall (0 : E n) (2 * R + 1)) := isCompact_closedBall 0 (2 * R + 1)
@@ -641,10 +646,12 @@ lemma mollify_L2_convergence_continuous {n : ℕ} {g : E n → ℝ} {R : ℝ} (h
       simp only [hg_xy, zero_mul, Pi.zero_apply]
   have h_pointwise_bound : ∀ x ∈ Metric.closedBall (0 : E n) (2 * R + 1),
       dist (mollify ε g x) (g x) < η := fun x hx => by rw [dist_comm]; exact hε_unif x hx
+  have h_diff_meas : AEStronglyMeasurable (mollify ε g - g) volume :=
+    ((mollify_smooth hg_compact hg_cont.locallyIntegrable hε_pos).continuous.sub hg_cont).aestronglyMeasurable
   have h_restrict : eLpNorm (mollify ε g - g) 2 volume =
       eLpNorm (mollify ε g - g) 2 (volume.restrict (Metric.closedBall 0 (2 * R + 1))) := by
     symm
-    apply eLpNorm_restrict_eq_of_support_subset
+    apply eLpNorm_restrict_eq_of_support_subset h_diff_meas
     intro x hx
     rw [Function.mem_support] at hx
     by_contra hx_not_in
@@ -652,7 +659,7 @@ lemma mollify_L2_convergence_continuous {n : ℕ} {g : E n → ℝ} {R : ℝ} (h
   rw [h_restrict]
   calc eLpNorm (mollify ε g - g) 2 (volume.restrict (Metric.closedBall 0 (2 * R + 1)))
       ≤ eLpNorm (fun (_ : E n) => η) 2 (volume.restrict (Metric.closedBall 0 (2 * R + 1))) := by
-        apply eLpNorm_mono_ae
+        apply eLpNorm_mono_ae h_diff_meas.restrict
         rw [Filter.eventually_iff_exists_mem]
         use Set.univ
         constructor
@@ -747,6 +754,9 @@ lemma mollify_L2_convergence_gaussian_continuous {n : ℕ} {g : E n → ℝ} {R 
     (hg_cont : Continuous g) (hg_supp : tsupport g ⊆ Metric.closedBall 0 (2 * R)) :
     Filter.Tendsto (fun ε => eLpNorm (mollify ε g - g) 2 (stdGaussianE n))
       (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
+  have hg_compact : HasCompactSupport g :=
+    HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall 0 (2 * R))
+      (fun x hx => hg_supp (subset_closure hx))
   -- Define the enlarged ball that contains all supports
   set K := Metric.closedBall (0 : E n) (2 * R + 1) with hK_def
   -- stdGaussianE is a probability measure, so μ(K) ≤ 1 < ⊤
@@ -819,6 +829,8 @@ lemma mollify_L2_convergence_gaussian_continuous {n : ℕ} {g : E n → ℝ} {R 
     -- For x in K, |mollify ε g x - g x| < η
     have h_pointwise : ∀ x ∈ K, dist (mollify ε g x) (g x) < η := fun x hx => by
       rw [dist_comm]; exact hε_unif x hx
+    have h_diff_meas : AEStronglyMeasurable (mollify ε g - g) (stdGaussianE n) :=
+      ((mollify_smooth hg_compact hg_cont.locallyIntegrable hε_pos).continuous.sub hg_cont).aestronglyMeasurable
     -- For x ∉ K, mollify ε g x - g x = 0
     have h_supp_diff : ∀ x, x ∉ K → (mollify ε g - g) x = 0 := by
       intro x hx
@@ -880,7 +892,7 @@ lemma mollify_L2_convergence_gaussian_continuous {n : ℕ} {g : E n → ℝ} {R 
     have h_norm_eq_restrict : eLpNorm (mollify ε g - g) 2 (stdGaussianE n) =
         eLpNorm (mollify ε g - g) 2 ((stdGaussianE n).restrict K) := by
       symm
-      apply eLpNorm_restrict_eq_of_support_subset
+      apply eLpNorm_restrict_eq_of_support_subset h_diff_meas
       intro x hx
       rw [Function.mem_support] at hx
       by_contra hx_not_in
@@ -892,7 +904,7 @@ lemma mollify_L2_convergence_gaussian_continuous {n : ℕ} {g : E n → ℝ} {R 
       exact this
     calc eLpNorm (mollify ε g - g) 2 ((stdGaussianE n).restrict K)
         ≤ eLpNorm (fun _ => η) 2 ((stdGaussianE n).restrict K) := by
-          apply eLpNorm_mono_ae
+          apply eLpNorm_mono_ae h_diff_meas.restrict
           filter_upwards with x
           rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_pos hη_pos]
           simp only [Pi.sub_apply]
@@ -1283,9 +1295,15 @@ lemma gradient_L2_convergence_gaussian {g : E n → ℝ} {R : ℝ} (hR : 0 < R)
           _ = (0 : Measure (E n)) Set.univ := by rw [h]
           _ = 0 := rfl
       exact one_ne_zero this
+    have h_grad_diff_meas : AEStronglyMeasurable
+        (fun x => ‖fderiv ℝ (mollify ε g) x - fderiv ℝ g x‖) (stdGaussianE n) := by
+      have h_mollify_fderiv_cont : Continuous (fderiv ℝ (mollify ε g)) :=
+        (mollify_smooth hg_compact hg_diff.continuous.locallyIntegrable hε_pos).continuous_fderiv
+          (by simp)
+      exact (h_mollify_fderiv_cont.sub hg_grad_cont).norm.aestronglyMeasurable
     calc eLpNorm (fun x => ‖fderiv ℝ (mollify ε g) x - fderiv ℝ g x‖) 2 (stdGaussianE n)
         ≤ eLpNorm (fun _ => δr) 2 (stdGaussianE n) := by
-          apply eLpNorm_mono_ae
+          apply eLpNorm_mono_ae h_grad_diff_meas
           filter_upwards with x
           rw [Real.norm_eq_abs, abs_of_nonneg (norm_nonneg _)]
           rw [Real.norm_eq_abs, abs_of_pos hδr_pos]
