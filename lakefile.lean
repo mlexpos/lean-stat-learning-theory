@@ -27,8 +27,8 @@ package «SLT» where
   leanOptions := options
   moreServerOptions := linter
 
-require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git" @ "v4.32.0"
+-- Port (2026-10-24): shared Mathlib checkout of the ~/Documents/lean workspace, v4.34.1.
+require mathlib from "../../.lake/packages/mathlib"
 
 @[default_target]
 lean_lib «SLT» where
